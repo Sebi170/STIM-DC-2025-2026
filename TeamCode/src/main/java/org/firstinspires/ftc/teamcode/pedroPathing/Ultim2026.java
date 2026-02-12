@@ -26,10 +26,6 @@ public class Ultim2026 extends OpMode {
         // starting pose Pedro (modifica daca vrei)
         follower.setStartingPose(new Pose(72,72));
 
-        motor1 = hardwareMap.get(DcMotor.class,"motor1");
-        motor2 = hardwareMap.get(DcMotor.class,"motor2");
-        motor3 = hardwareMap.get(DcMotor.class,"motor3");
-        motor4 = hardwareMap.get(DcMotor.class,"motor4");
 
         telemetry.addLine("Pedro TeleOp Ready");
         telemetry.update();
@@ -38,7 +34,6 @@ public class Ultim2026 extends OpMode {
     @Override
     public void init_loop() {
         follower.update();
-        drawOnlyCurrent();
     }
 
     @Override
@@ -78,7 +73,6 @@ public class Ultim2026 extends OpMode {
         telemetry.addData("Voltage", batteryVoltageSensor.getVoltage());
         telemetry.update();
 
-        draw();
     }
 
     // ===== VOLTAGE COMPENSATION =====
