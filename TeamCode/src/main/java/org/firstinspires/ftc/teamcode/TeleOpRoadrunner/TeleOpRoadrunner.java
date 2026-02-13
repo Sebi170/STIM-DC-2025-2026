@@ -4,6 +4,7 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -17,7 +18,7 @@ import java.util.List;
 @TeleOp(name = "TeleOpRoadrunner")
 public class TeleOpRoadrunner extends LinearOpMode {
 
-    DcMotor motor1, motor2, motor3, motor4;
+    DcMotorEx motor1, motor2, motor3, motor4;
 
     // VISION
     VisionPortal visionPortal;
@@ -38,10 +39,10 @@ public class TeleOpRoadrunner extends LinearOpMode {
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
         batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
 
-        motor1 = hardwareMap.get(DcMotor.class, "m1");
-        motor2 = hardwareMap.get(DcMotor.class, "m2");
-        motor3 = hardwareMap.get(DcMotor.class, "m3");
-        motor4 = hardwareMap.get(DcMotor.class, "m4");
+        motor1 = hardwareMap.get(DcMotorEx.class, "m1");
+        motor2 = hardwareMap.get(DcMotorEx.class, "m2");
+        motor3 = hardwareMap.get(DcMotorEx.class, "m3");
+        motor4 = hardwareMap.get(DcMotorEx.class, "m4");
 
         drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -108,13 +109,14 @@ public class TeleOpRoadrunner extends LinearOpMode {
             // ================= MOTOARE AUX =================
             motor1.setPower(Math.abs(gamepad2.left_stick_y) > 0.1 ? gamepad2.left_stick_y : 0);
             motor2.setPower(Math.abs(gamepad2.right_stick_y) > 0.1 ? gamepad2.right_stick_y : 0);
-
+            double voutake = motor3.getVelocity();
+            telemetry.addData("ghhh", voutake);
             if (gamepad2.right_bumper) {
-                motor3.setPower(compensatedPower(-0.65));
-                motor4.setPower(compensatedPower(0.65));
+                motor3.setPower(compensatedPower(power1(-0.65, voutake)));
+                motor4.setPower(compensatedPower(power2(0.65, voutake)));
             } else if (gamepad2.left_bumper) {
-                motor3.setPower(compensatedPower(-0.53));
-                motor4.setPower(compensatedPower(0.53    ));
+               motor3.setPower(compensatedPower(power2(-0.53, voutake)));
+               motor4.setPower(compensatedPower(power2(0.53, voutake)));
             } else {
                 motor3.setPower(0);
                 motor4.setPower(0);
@@ -156,6 +158,15 @@ public class TeleOpRoadrunner extends LinearOpMode {
         double power = powerDorita * (V_REF / voltage);
         telemetry.addData("voltaj", voltage);
         return clip(power, -1.0, 1.0);
+    }
+
+    double power1(double power, double voutake){
+        double adjusted = power * (-1540/voutake);
+        return clip(adjusted, -1, 1);
+    }
+    double power2(double power, double voutake){
+        double adjusted = power * (-1300/voutake);
+        return clip(adjusted, -1, 1);
     }
 
 }
