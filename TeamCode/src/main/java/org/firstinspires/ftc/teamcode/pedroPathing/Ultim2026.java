@@ -9,6 +9,7 @@ import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
@@ -22,7 +23,7 @@ import java.util.List;
 @TeleOp(name = "Ultim2026")
 public class Ultim2026 extends OpMode {
 
-    DcMotor motor1, motor2, motor3, motor4;
+    DcMotorEx motor1, motor2, motor3, motor4;
 
     VisionPortal visionPortal;
     AprilTagProcessor aprilTag;
@@ -56,15 +57,15 @@ public class Ultim2026 extends OpMode {
                 aprilTag
         );
 
-        motor1 = hardwareMap.get(DcMotor.class,"m1");
-        motor2 = hardwareMap.get(DcMotor.class,"m2");
-        motor3 = hardwareMap.get(DcMotor.class,"m3");
-        motor4 = hardwareMap.get(DcMotor.class,"m4");
+        motor1 = hardwareMap.get(DcMotorEx.class,"m1");
+        motor2 = hardwareMap.get(DcMotorEx.class,"m2");
+        motor3 = hardwareMap.get(DcMotorEx.class,"m3");
+        motor4 = hardwareMap.get(DcMotorEx.class,"m4");
 
-        motor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor3.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor4.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor1.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        motor2.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        motor3.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        motor4.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
 
         telemetry.addLine("Pedro TeleOp Ready");
         telemetry.update();
@@ -184,15 +185,16 @@ public class Ultim2026 extends OpMode {
         // ================= MOTOARE AUX =================
         motor1.setPower(Math.abs(gamepad2.left_stick_y) > 0.1 ? gamepad2.left_stick_y : 0);
         motor2.setPower(Math.abs(gamepad2.right_stick_y) > 0.1 ? gamepad2.right_stick_y : 0);
-
+        double vouttake = motor3.getVelocity();
+        telemetry.addData("ticks", vouttake);
         // ===== MECANISME =====
         if (gamepad2.right_bumper) {
-            motor3.setPower(compensatedPower(-0.7));
-            motor4.setPower(compensatedPower(0.7));
+            motor3.setPower(compensatedPower(power1(-0.7,vouttake)));
+            motor4.setPower(compensatedPower(power1(0.7,vouttake)));
         }
         else if (gamepad2.left_bumper) {
-            motor3.setPower(compensatedPower(-0.5));
-            motor4.setPower(compensatedPower(0.5));
+            motor3.setPower(compensatedPower(power2(-0.45,vouttake)));
+            motor4.setPower(compensatedPower(power2(0.45,vouttake)));
         }
         else {
             motor3.setPower(0);
@@ -215,5 +217,13 @@ public class Ultim2026 extends OpMode {
 
     double clip(double val, double min, double max) {
         return Math.max(min, Math.min(max, val));
+    }
+    double power1(double power, double vouttake){
+        double adjusted = power * (-1540 / vouttake);
+        return clip(adjusted, -1, 1);
+    }
+    double power2(double power, double vouttake){
+        double adjusted = power * (-1400 / vouttake);
+        return clip(adjusted, -1, 1);
     }
 }

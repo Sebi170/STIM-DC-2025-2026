@@ -15,7 +15,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
 
-@TeleOp(name = "TeleOpRoadrunner")
+@TeleOp(name = "TeleOpRoadrunner_DESERT")
 public class TeleOpRoadrunner extends LinearOpMode {
 
     DcMotorEx motor1, motor2, motor3, motor4;
@@ -112,8 +112,8 @@ public class TeleOpRoadrunner extends LinearOpMode {
             double voutake = motor3.getVelocity();
             telemetry.addData("ghhh", voutake);
             if (gamepad2.right_bumper) {
-                motor3.setPower(compensatedPower(power1(-0.65, voutake)));
-                motor4.setPower(compensatedPower(power2(0.65, voutake)));
+                motor3.setPower(compensatedPower(power1(-0.70, voutake)));
+                motor4.setPower(compensatedPower(power2(0.70, voutake)));
             } else if (gamepad2.left_bumper) {
                motor3.setPower(compensatedPower(power2(-0.53, voutake)));
                motor4.setPower(compensatedPower(power2(0.53, voutake)));
@@ -161,7 +161,7 @@ public class TeleOpRoadrunner extends LinearOpMode {
     }
 
     double power1(double power, double voutake){
-        double adjusted = power * (-1540/voutake);
+        double adjusted = power * (-1600/voutake);
         return clip(adjusted, -1, 1);
     }
     double power2(double power, double voutake){
