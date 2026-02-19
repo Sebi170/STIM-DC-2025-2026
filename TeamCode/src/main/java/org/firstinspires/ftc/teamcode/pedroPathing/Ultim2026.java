@@ -196,7 +196,8 @@ public class Ultim2026 extends OpMode {
             motor3.setPower(compensatedPower(power2(-0.45,vouttake)));
             motor4.setPower(compensatedPower(power2(0.45,vouttake)));
         }
-        else {
+        else
+        {
             motor3.setPower(0);
             motor4.setPower(0);
         }
