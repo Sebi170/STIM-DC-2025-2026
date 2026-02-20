@@ -14,8 +14,8 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@Autonomous(name = "testauto", group = "Examples")
-public class testauto extends OpMode {
+@Autonomous(name = "Auto Far Blue")
+public class AutoFarBlue extends OpMode {
 
     private Follower follower;
     private VoltageSensor batteryVoltageSensor;
@@ -344,4 +344,3 @@ public class testauto extends OpMode {
         return Math.max(min, Math.min(max, val));
     }
 }
-

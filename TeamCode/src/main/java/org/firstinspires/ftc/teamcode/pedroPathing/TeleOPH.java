@@ -20,10 +20,10 @@ public class TeleOPH extends OpMode {
     private Follower follower;
 
     // ================= PID VARIABLES =================
-    private double KP = 0.004;
-    private double KI = 0.003;
-    private double KD = 0.000;
-    private double KF = 0.4;
+    private double KP = 0.0035;
+    private double KI = 0.0004;
+    private double KD = 0.0005;
+    private double KF = 0.45;
     private double KP_SYNC = 0.001;
 
     private double INTEGRAL_CLAMP = 2000;
@@ -125,7 +125,14 @@ public class TeleOPH extends OpMode {
             motor4.setPower(powers[1]);
 
         } else {
+            // RESET PID STATE
+            masterIntegral = 0;
+            slaveIntegral = 0;
+            syncIntegral = 0;
 
+            masterPrevError = 0;
+            slavePrevError = 0;
+            prevTimeNs = -1;
             motor3.setPower(0);
             motor4.setPower(0);
         }
@@ -209,8 +216,7 @@ public class TeleOPH extends OpMode {
 
         double syncNudge = KP_SYNC * syncError;
 
-        double ff = KF * Math.signum(targetTicksPerSec);
-
+        double ff = KF * (targetTicksPerSec / 2000.0);
         double masterPower = clip(ff + masterCorrection, -1, 1);
         double slavePower = clip(ff + slaveCorrection + syncNudge, -1, 1);
 
