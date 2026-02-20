@@ -144,9 +144,23 @@ public class Iultim2026red extends LinearOpMode {
      * Control motoare auxiliare
      */
     private void controlAuxMotors() {
+        double voutake4 = motor1.getVelocity();
+        double voutake5 = motor2.getVelocity();
         // Motoare controlate prin stick-uri gamepad 2
-        motor1.setPower(Math.abs(gamepad2.left_stick_y) > 0.1 ? gamepad2.left_stick_y : 0);
-        motor2.setPower(Math.abs(gamepad2.right_stick_y) > 0.1 ? -gamepad2.right_stick_y : 0);
+        motor1.setPower(Math.abs(gamepad2.left_stick_y) > 0.1 ? getCompensatedPower(baseAdjust(gamepad2.left_stick_y, voutake4, -tiks_teoretic(gamepad2.left_stick_y))) : 0);
+        motor2.setPower(Math.abs(gamepad2.right_stick_y) > 0.1 ? getCompensatedPower(baseAdjust(-gamepad2.right_stick_y, voutake4, -tiks_teoretic(-gamepad2.right_stick_y))) : 0);
+        if (gamepad2.left_stick_y > 0.1){
+            motor1.setPower(getCompensatedPower(0.95));
+        }else if (gamepad2.left_stick_y < -0.1){
+            motor1.setPower(getCompensatedPower(-0.95));
+        }else
+            motor1.setPower(0);
+        if (gamepad2.right_stick_y > 0.1){
+            motor2.setPower(getCompensatedPower(-0.95));
+        }else if (gamepad2.right_stick_y < -0.1){
+            motor2.setPower(getCompensatedPower(0.95));
+        }else
+            motor2.setPower(0);
 
         double voutake = motor3.getVelocity();
         double voutake1 = motor4.getVelocity();
@@ -156,13 +170,14 @@ public class Iultim2026red extends LinearOpMode {
         // Control motoare 3 și 4 prin Bumpers cu compensare de voltaj
         if (gamepad2.right_bumper) {
              motor3.setPower(getCompensatedPower(baseAdjust(-VFD(x), voutake, -tiks_teoretic(VFD(x)))));
-            motor4.setPower(getCompensatedPower(baseAdjust1(VFD(x), voutake, -tiks_teoretic(VFD(x)))));
+            motor4.setPower(getCompensatedPower(baseAdjust(VFD(x), voutake, -tiks_teoretic(VFD(x)))));
             //motor3.setPower(getCompensatedPower(-0.6));
             //motor4.setPower(getCompensatedPower(0.6));
         } else if (gamepad2.left_bumper) {
+
             motor3.setPower(getCompensatedPower(baseAdjust(-VFD(x), voutake, -tiks_teoretic(VFD(x)))));
-            motor4.setPower(getCompensatedPower(baseAdjust1(VFD(x), voutake, -tiks_teoretic(VFD(x)))));
-            telemetry.addData("compensedPower", getCompensatedPower(baseAdjust1(VFD(x), voutake, -tiks_teoretic(VFD(x)))));
+            motor4.setPower(getCompensatedPower(baseAdjust(VFD(x), voutake, -tiks_teoretic(VFD(x)))));
+            telemetry.addData("compensedPower", getCompensatedPower(baseAdjust(VFD(x), voutake, -tiks_teoretic(VFD(x)))));
             telemetry.addData("compensedPower", getCompensatedPower(baseAdjust(-VFD(x), voutake, -tiks_teoretic(VFD(x)))));
         }else {
 
@@ -190,7 +205,7 @@ public class Iultim2026red extends LinearOpMode {
     }
      private double VFD(double x){
         double v = 0;
-        x = x * 0.0254;
+        x = x * 0.0254+0.2;
         v = x / 0.5591;
         telemetry.addData("distanta", x);
         v = v*Math.sqrt(9.81/(1.48256*x-1));
