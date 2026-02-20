@@ -41,7 +41,7 @@ public class TeleOPH extends OpMode {
     private double syncIntegral = 0;
 
     // ===== LIVE TUNING CONTROL =====
-    double tuneStep = 0.0005;
+    double tuneStep = 0.00001;
     boolean lastUp, lastDown, lastLeft, lastRight, lastY, lastA;
 
     @Override

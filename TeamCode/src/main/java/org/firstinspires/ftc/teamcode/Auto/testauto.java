@@ -28,31 +28,43 @@ public class testauto extends OpMode {
     static final double V_REF = 12.0;
     static final double TICKS_PER_REV = 28;
 
+    boolean shooterEnabled;
+    double shooterTargetRPM;
     DcMotorEx motor1, motor2, motor3, motor4;
 
     private int pathState;
 
+    boolean canShoot;
+
+    private double RPM_TOLERANCE = 50;      // allowed error
+    private double STABLE_TIME = 0.2;       // seconds required at speed
+    private double atSpeedTimer = 0;
+
     private Path scorePreload;
-    private PathChain launchPose, ballPose, takePose, shootPose;
+    private PathChain firstLaunchPose, launchPose, ballPose, takePose, shootPose;
     private final Pose startPose = new Pose(54.5015, 8.28, Math.toRadians(-90));
-    private final Pose scorePose = new Pose(61.6676, 13.5998, Math.toRadians(-75));
+    private final Pose scorePose = new Pose(61.6676, 13.5998, Math.toRadians(-70));
     private final Pose AballPose = new Pose(9.936567772511845, 23.7, Math.toRadians(-100));
     private final Pose takeBall = new Pose(8.76777251184834, 10.4, Math.toRadians(-100));
 
     public boolean Outtake()
     {
 
-        motor1.setPower(-0.9);
-        motor2.setPower(-0.6);
+        if (actionTimer.getElapsedTimeSeconds() < 1.f)
+            return false;
 
-        if (actionTimer.getElapsedTimeSeconds() < 3.f)
+        motor1.setPower(-0.9);
+        motor2.setPower(-0.5);
+
+        if (actionTimer.getElapsedTimeSeconds() < 4.f)
             return false;
 
         motor3.setPower(0);
         motor4.setPower(0);
         motor2.setPower(0);
         motor1.setPower(0);
-
+        shooterEnabled = false;
+        shooterTargetRPM = 0;
         return true;
     }
 
@@ -66,6 +78,9 @@ public class testauto extends OpMode {
             motor2.setPower(0);
         }
         follower.setMaxPower(1);
+
+        if (actionTimer.getElapsedTimeSeconds() > 5.f)
+            setPathState(4);
     }
 
     public void buildPaths() {
@@ -75,6 +90,11 @@ public class testauto extends OpMode {
 
     /* Here is an example for Constant Interpolation
     scorePreload.setConstantInterpolation(startPose.getHeading()); */
+        firstLaunchPose = follower.pathBuilder()
+                .addPath(new BezierLine(startPose, scorePose))
+                .setLinearHeadingInterpolation(startPose.getHeading(), scorePose.getHeading())
+                .build();
+
         launchPose = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, scorePose))
                 .setLinearHeadingInterpolation(startPose.getHeading(), scorePose.getHeading())
@@ -100,10 +120,9 @@ public class testauto extends OpMode {
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
-                double[] powers = baseAdjustSyncedRPM(masterVel, slaveVel, 3000);
-                motor3.setPower(powers[0]);
-                motor4.setPower(powers[1]);
-                follower.followPath(launchPose);
+                shooterEnabled = true;
+                shooterTargetRPM = 3150;
+                follower.followPath(firstLaunchPose);
                 setPathState(1);
                 break;
             case 1:
@@ -129,14 +148,14 @@ public class testauto extends OpMode {
             case 3:
                 /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
                 if(!follower.isBusy()) {
+                    shooterEnabled = true;
+                    shooterTargetRPM = 3150;
                     follower.followPath(shootPose,true);
                     setPathState(4);
                 }
                 break;
             case 4:
                 if(!follower.isBusy()) {
-                    if (actionTimer.getElapsedTimeSeconds() < 1.f)
-                        return;
                     if (!Outtake())
                         return;
                     /* Set the state to a Case we won't use or define, so it just stops running an new paths */
@@ -161,13 +180,29 @@ public class testauto extends OpMode {
         // These loop the movements of the robot, these must be called continuously in order to work
         follower.update();
         autonomousPathUpdate();
-        masterVel = motor4.getVelocity();
+        masterVel = motor3.getVelocity();
         slaveVel = motor4.getVelocity();
+
+        if (shooterEnabled) {
+            double[] powers = baseAdjustSyncedRPM(masterVel, slaveVel, shooterTargetRPM);
+            motor3.setPower(powers[0]);
+            motor4.setPower(powers[1]);
+        }
+        else {
+            motor3.setPower(0);
+            motor4.setPower(0);
+            if (shooterTargetRPM == 0) {
+                canShoot = false;
+                atSpeedTimer = 0;
+            }
+        }
         // Feedback to Driver Hub for debugging
         telemetry.addData("path state", pathState);
         telemetry.addData("x", follower.getPose().getX());
         telemetry.addData("y", follower.getPose().getY());
         telemetry.addData("heading", follower.getPose().getHeading());
+        telemetry.addData("Can Shoot", canShoot);
+        telemetry.addData("Time At Speed", atSpeedTimer);
         telemetry.update();
     }
 
@@ -219,12 +254,12 @@ public class testauto extends OpMode {
     }
     // ================= PID VARIABLES =================
     private double KP = 0.004;
-    private double KI = 0.003;
+    private double KI = 0.002;
     private double KD = 0.000;
     private double KF = 0.4;
     private double KP_SYNC = 0.001;
 
-    private double INTEGRAL_CLAMP = 2000;
+    private double INTEGRAL_CLAMP = 50;
 
     private long prevTimeNs = -1;
 
@@ -290,6 +325,18 @@ public class testauto extends OpMode {
         double masterPower = clip(ff + masterCorrection, -1, 1);
         double slavePower = clip(ff + slaveCorrection + syncNudge, -1, 1);
 
+        double masterRPM = masterTicksPerSec * 60.0 / TICKS_PER_REV;
+        double rpmError = targetRPM - masterRPM;
+
+        // Check if within tolerance
+        if (Math.abs(rpmError) < RPM_TOLERANCE) {
+            atSpeedTimer += dt;
+        } else {
+            atSpeedTimer = 0;
+        }
+
+        // If stable long enough → allow shooting
+        canShoot = atSpeedTimer >= STABLE_TIME;
         return new double[]{masterPower, slavePower};
     }
 
