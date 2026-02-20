@@ -20,6 +20,9 @@ public class testauto extends OpMode {
     private Follower follower;
     private VoltageSensor batteryVoltageSensor;
 
+    double masterVel;
+    double slaveVel;
+
     private Timer pathTimer, actionTimer, opmodeTimer;
 
     static final double V_REF = 12.0;
@@ -32,7 +35,7 @@ public class testauto extends OpMode {
     private Path scorePreload;
     private PathChain launchPose, ballPose, takePose, shootPose;
     private final Pose startPose = new Pose(54.5015, 8.28, Math.toRadians(-90));
-    private final Pose scorePose = new Pose(61.6676, 13.5998, Math.toRadians(-65));
+    private final Pose scorePose = new Pose(61.6676, 13.5998, Math.toRadians(-75));
     private final Pose AballPose = new Pose(9.936567772511845, 23.7, Math.toRadians(-100));
     private final Pose takeBall = new Pose(8.76777251184834, 10.4, Math.toRadians(-100));
 
@@ -51,13 +54,6 @@ public class testauto extends OpMode {
         motor1.setPower(0);
 
         return true;
-    }
-    public void PrepareOuttake() {
-        double voutake = motor3.getVelocity();
-        double voutake2 = motor4.getVelocity();
-        double[] powers = baseAdjustSynced(voutake, voutake2, 1000 * TICKS_PER_REV / 60.0);
-        motor3.setPower((powers[0]));
-        motor4.setPower((powers[1]));
     }
 
     public void Intake()
@@ -104,7 +100,9 @@ public class testauto extends OpMode {
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
-                PrepareOuttake();
+                double[] powers = baseAdjustSyncedRPM(masterVel, slaveVel, 3000);
+                motor3.setPower(powers[0]);
+                motor4.setPower(powers[1]);
                 follower.followPath(launchPose);
                 setPathState(1);
                 break;
@@ -131,7 +129,6 @@ public class testauto extends OpMode {
             case 3:
                 /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
                 if(!follower.isBusy()) {
-                    PrepareOuttake();
                     follower.followPath(shootPose,true);
                     setPathState(4);
                 }
@@ -164,7 +161,8 @@ public class testauto extends OpMode {
         // These loop the movements of the robot, these must be called continuously in order to work
         follower.update();
         autonomousPathUpdate();
-
+        masterVel = motor4.getVelocity();
+        slaveVel = motor4.getVelocity();
         // Feedback to Driver Hub for debugging
         telemetry.addData("path state", pathState);
         telemetry.addData("x", follower.getPose().getX());
@@ -219,73 +217,84 @@ public class testauto extends OpMode {
         double currentVoltage = batteryVoltageSensor.getVoltage();
         return Math.max(-1, Math.min(1, power * (V_REF / currentVoltage)));
     }
-    private double KP             = 0.0012;
-    private double KI             = 0.00003;
-    private double KD             = 0.0010;
-    private double KF             = 0.4;     // base kick to overcome inertia
-    private double INTEGRAL_CLAMP = 0.15;
-    private double KP_SYNC        = 0.002;
+    // ================= PID VARIABLES =================
+    private double KP = 0.004;
+    private double KI = 0.003;
+    private double KD = 0.000;
+    private double KF = 0.4;
+    private double KP_SYNC = 0.001;
 
-    // Shared timestamp
-    private long   prevTimeNs      = -1;
+    private double INTEGRAL_CLAMP = 2000;
 
-    // Master state
-    private double masterIntegral  = 0.0;
-    private double masterPrevError = 0.0;
-    private double masterDeriv     = 0.0;
+    private long prevTimeNs = -1;
 
-    // Slave state
-    private double slaveIntegral   = 0.0;
-    private double slavePrevError  = 0.0;
-    private double slaveDeriv      = 0.0;
+    private double masterIntegral = 0;
+    private double masterPrevError = 0;
+    private double masterDeriv = 0;
 
-    // Sync state
-    private double syncIntegral    = 0.0;
+    private double slaveIntegral = 0;
+    private double slavePrevError = 0;
+    private double slaveDeriv = 0;
 
-    private double[] baseAdjustSynced(double masterVel, double slaveVel, double targetVel) {
+    private double syncIntegral = 0;
 
-        // --- SHARED DT ---
-        long   nowNs = System.nanoTime();
-        double dt    = (prevTimeNs < 0) ? 0.02 : (nowNs - prevTimeNs) / 1e9;
-        prevTimeNs   = nowNs;
-        dt           = Math.max(1e-6, Math.min(dt, 0.5));
 
-        // --- MASTER ---
-        double masterError  = targetVel - masterVel;
-        masterIntegral     += masterError * dt;
-        masterIntegral      = Math.max(-INTEGRAL_CLAMP, Math.min(INTEGRAL_CLAMP, masterIntegral));
-        double masterRawD   = (masterError - masterPrevError) / dt;
-        masterDeriv         = 0.7 * masterDeriv + 0.3 * masterRawD;
-        masterPrevError     = masterError;
+    private double[] baseAdjustSyncedRPM(double masterTicksPerSec,
+                                         double slaveTicksPerSec,
+                                         double targetRPM) {
 
-        double masterCorrection = KP * masterError
-                + KI * masterIntegral
-                + KD * masterDeriv;
+        double targetTicksPerSec = targetRPM * TICKS_PER_REV / 60.0;
 
-        // --- SLAVE ---
-        double slaveError = targetVel - slaveVel;
-        slaveIntegral      += slaveError * dt;
-        slaveIntegral       = Math.max(-INTEGRAL_CLAMP, Math.min(INTEGRAL_CLAMP, slaveIntegral));
-        double slaveRawD    = (slaveError - slavePrevError) / dt;
-        slaveDeriv          = 0.7 * slaveDeriv + 0.3 * slaveRawD;
-        slavePrevError      = slaveError;
+        long nowNs = System.nanoTime();
+        double dt = (prevTimeNs < 0) ? 0.02 : (nowNs - prevTimeNs) / 1e9;
+        prevTimeNs = nowNs;
+        dt = Math.max(1e-6, Math.min(dt, 0.5));
 
-        double slaveCorrection = KP * slaveError
-                + KI * slaveIntegral
-                + KD * slaveDeriv;
+        // MASTER
+        double masterError = targetTicksPerSec - masterTicksPerSec;
+        masterIntegral += masterError * dt;
+        masterIntegral = clip(masterIntegral, -INTEGRAL_CLAMP, INTEGRAL_CLAMP);
 
-        // --- SYNC NUDGE ---
-        double syncError = masterVel - slaveVel;
-        syncIntegral    += syncError * dt;
-        syncIntegral     = Math.max(-0.1, Math.min(0.1, syncIntegral));
-        double syncNudge = KP_SYNC * syncError + 0.0001 * syncIntegral;
+        double masterRawD = (masterError - masterPrevError) / dt;
+        masterDeriv = 0.7 * masterDeriv + 0.3 * masterRawD;
+        masterPrevError = masterError;
 
-// MASTER
-        double ff           = KF * Math.signum(targetVel);
-        double masterPower = Math.max(-1, Math.min(1, ff + KP * masterError + KI * masterIntegral + KD * masterDeriv));
-        double slavePower  = Math.max(-1, Math.min(1, ff + slaveCorrection + syncNudge));
+        double masterCorrection =
+                KP * masterError +
+                        KI * masterIntegral +
+                        KD * masterDeriv;
+
+        // SLAVE
+        double slaveError = targetTicksPerSec - slaveTicksPerSec;
+        slaveIntegral += slaveError * dt;
+        slaveIntegral = clip(slaveIntegral, -INTEGRAL_CLAMP, INTEGRAL_CLAMP);
+
+        double slaveRawD = (slaveError - slavePrevError) / dt;
+        slaveDeriv = 0.7 * slaveDeriv + 0.3 * slaveRawD;
+        slavePrevError = slaveError;
+
+        double slaveCorrection =
+                KP * slaveError +
+                        KI * slaveIntegral +
+                        KD * slaveDeriv;
+
+        // SYNC
+        double syncError = masterTicksPerSec - slaveTicksPerSec;
+        syncIntegral += syncError * dt;
+        syncIntegral = clip(syncIntegral, -1000, 1000);
+
+        double syncNudge = KP_SYNC * syncError;
+
+        double ff = KF * Math.signum(targetTicksPerSec);
+
+        double masterPower = clip(ff + masterCorrection, -1, 1);
+        double slavePower = clip(ff + slaveCorrection + syncNudge, -1, 1);
 
         return new double[]{masterPower, slavePower};
+    }
+
+    double clip(double val, double min, double max) {
+        return Math.max(min, Math.min(max, val));
     }
 }
 
