@@ -100,51 +100,51 @@ public class AutoCloseRed extends OpMode {
         Path1 = follower.pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(125.373, 122.687),
-                                new Pose(85, 90.896)
+                                new Pose(119.105, 129.672),
+                                new Pose(82.000, 90.896)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(216.38), Math.toRadians(215))
+                .setLinearHeadingInterpolation(Math.toRadians(217), Math.toRadians(225))
                 .build();
 
         Path2 = follower.pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(85, 90.896),
-                                new Pose(98, 84.045)
+                                new Pose(82.000, 90.896),
+                                new Pose(97.000, 84.045)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(215), Math.toRadians(0))
+                .setLinearHeadingInterpolation(Math.toRadians(220), Math.toRadians(0))
                 .build();
 
         Path3 = follower.pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(98, 84.045),
-                                new Pose(128.582, 82.672)
+                                new Pose(97.000, 84.045),
+                                new Pose(128.300, 84.045)
                         )
                 )
-                .setTangentHeadingInterpolation()
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
                 .build();
 
         Path4 = follower.pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(128.582, 82.672),
-                                new Pose(85.881, 90.866)
+                                new Pose(128.300, 84.045),
+                                new Pose(95.881, 91.000)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(215))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(220))
                 .build();
 
         Path5 = follower.pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(85.881, 90.866),
+                                new Pose(95.881, 91.000),
                                 new Pose(128.731, 72.075)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(215), Math.toRadians(270))
+                .setLinearHeadingInterpolation(Math.toRadians(220), Math.toRadians(270))
                 .build();
 
         Path6 = follower.pathBuilder()
@@ -162,21 +162,21 @@ public class AutoCloseRed extends OpMode {
                 .addPath(
                         new BezierLine(
                                 new Pose(99.045, 60.000),
-                                new Pose(132.672, 58.821)
+                                new Pose(134.500, 60.000)
                         )
                 )
-                .setTangentHeadingInterpolation()
+                .setConstantHeadingInterpolation(Math.toRadians(0))
                 .build();
 
         Path8 = follower.pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(132.672, 58.821),
+                                new Pose(134.500, 60.000),
                                 new Pose(66.731, 65.694),
                                 new Pose(85.896, 91.045)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(210))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(220))
                 .build();
 
         Path9 = follower.pathBuilder()
@@ -186,7 +186,7 @@ public class AutoCloseRed extends OpMode {
                                 new Pose(125.746, 80.776)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(210), Math.toRadians(180))
+                .setLinearHeadingInterpolation(Math.toRadians(220), Math.toRadians(180))
                 .build();
     }
     public void autonomousPathUpdate() {
@@ -331,7 +331,7 @@ public class AutoCloseRed extends OpMode {
 
         follower = Constants.createFollower(hardwareMap);
         buildPaths();
-        follower.setStartingPose(new Pose(122.882, 123.507, Math.toRadians(217)));
+        follower.setStartingPose(new Pose(122.882, 129.672, Math.toRadians(217)));
 
     }
 
