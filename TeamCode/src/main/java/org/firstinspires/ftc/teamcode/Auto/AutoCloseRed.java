@@ -43,10 +43,15 @@ public class AutoCloseRed extends OpMode {
     private double RPM_TOLERANCE = 50;      // allowed error
     private double STABLE_TIME = 0.2;       // seconds required at speed
     private double atSpeedTimer = 0;
-
-    private Path scorePreload;
-    private PathChain Path1, Path2, Path3, Path4, Path5, Path6, Path7, Path8, Path9;
-
+    public PathChain Path1;
+    public PathChain Path2;
+    public PathChain Path3;
+    public PathChain Path4;
+    public PathChain Path5;
+    public PathChain Path6;
+    public PathChain Path7;
+    public PathChain Path8;
+    public PathChain Path9;
     public boolean Outtake()
     {
 
@@ -54,7 +59,7 @@ public class AutoCloseRed extends OpMode {
             return false;
 
         motor1.setPower(-0.9);
-        motor2.setPower(-0.5);
+        motor2.setPower(-0.75);
 
         if (actionTimer.getElapsedTimeSeconds() < 4.f)
             return false;
@@ -70,46 +75,53 @@ public class AutoCloseRed extends OpMode {
 
     public void Intake()
     {
-        follower.setMaxPower(0.2);
+        follower.setMaxPower(0.7);
         motor1.setPower(-1);
-        motor2.setPower(-0.2);
-        if (actionTimer.getElapsedTimeSeconds() < 4.f) {
-            motor1.setPower(-1);
-            motor2.setPower(0);
-        }
+        motor2.setPower(-0.05);
+        motor3.setPower(-0.2);
+        motor4.setPower(-0.2);
+    }
+    public void StopIntake()
+    {
         follower.setMaxPower(1);
+        motor1.setPower(0);
+        motor2.setPower(0.2);
 
-        if (actionTimer.getElapsedTimeSeconds() > 5.f)
-            setPathState(4);
+        if (actionTimer.getElapsedTimeSeconds() < .5f)
+            return;
+
+
+        motor2.setPower(0);
+        motor3.setPower(1);
+        motor4.setPower(1);
     }
 
     public void buildPaths() {
-        /* This is our scorePreload path. We are using a BezierLine, which is a straight line. */
         Path1 = follower.pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(125.194, 122.866),
-                                new Pose(85.925, 90.896)
+                                new Pose(125.373, 122.687),
+                                new Pose(85, 90.896)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(216.38), Math.toRadians(225))
+                .setLinearHeadingInterpolation(Math.toRadians(216.38), Math.toRadians(215))
                 .build();
 
         Path2 = follower.pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(85.925, 90.896),
-                                new Pose(98.657, 84.045)
+                                new Pose(85, 90.896),
+                                new Pose(98, 84.045)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(225), Math.toRadians(0))
+                .setLinearHeadingInterpolation(Math.toRadians(215), Math.toRadians(0))
                 .build();
 
         Path3 = follower.pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(98.657, 84.045),
-                                new Pose(128.582, 83.672)
+                                new Pose(98, 84.045),
+                                new Pose(128.582, 82.672)
                         )
                 )
                 .setTangentHeadingInterpolation()
@@ -118,11 +130,11 @@ public class AutoCloseRed extends OpMode {
         Path4 = follower.pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(128.582, 83.672),
+                                new Pose(128.582, 82.672),
                                 new Pose(85.881, 90.866)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(225))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(215))
                 .build();
 
         Path5 = follower.pathBuilder()
@@ -132,7 +144,7 @@ public class AutoCloseRed extends OpMode {
                                 new Pose(128.731, 72.075)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(225), Math.toRadians(270))
+                .setLinearHeadingInterpolation(Math.toRadians(215), Math.toRadians(270))
                 .build();
 
         Path6 = follower.pathBuilder()
@@ -164,7 +176,7 @@ public class AutoCloseRed extends OpMode {
                                 new Pose(85.896, 91.045)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(225))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(210))
                 .build();
 
         Path9 = follower.pathBuilder()
@@ -174,94 +186,73 @@ public class AutoCloseRed extends OpMode {
                                 new Pose(125.746, 80.776)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(225), Math.toRadians(180))
+                .setLinearHeadingInterpolation(Math.toRadians(210), Math.toRadians(180))
                 .build();
-
     }
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
-                motor3.setPower(getCompensatedPower(-0.55));
-                motor4.setPower(getCompensatedPower(0.55));
+                shooterEnabled = true;
+                shooterTargetRPM = 2400;
                 follower.followPath(Path1);
-                motor1.setPower(-0.75);
-                motor2.setPower(0.75);
-                sleep(1500);
-                motor3.setPower(0);
-                motor4.setPower(0);
                 setPathState(1);
                 break;
             case 1:
                 if(!follower.isBusy()) {
+                    if (!Outtake())
+                        return;
                     follower.followPath(Path2);
-                    motor1.setPower(-0.8);
-                    motor2.setPower(0.1);
                     setPathState(2);
                 }
                 break;
             case 2:
                 if(!follower.isBusy()) {
+                    Intake();
                     follower.followPath(Path3);
-                    sleep(500);
-                    motor1.setPower(0);
-                    motor2.setPower(0);
                     setPathState(3);
                 }
                 break;
             case 3:
                 if(!follower.isBusy()) {
-                    motor3.setPower(getCompensatedPower(-0.55));
-                    motor4.setPower(getCompensatedPower(0.55));
+                    StopIntake();
+                    shooterEnabled = true;
+                    shooterTargetRPM = 2400;
                     follower.followPath(Path4);
-                    motor1.setPower(-0.75);
-                    motor2.setPower(0.75);
-                    sleep(1500);
-                    motor3.setPower(0);
-                    motor4.setPower(0);
-                    motor1.setPower(0);
-                    motor2.setPower(0);
                     setPathState(4);
                 }
                 break;
             case 4:
                 if(!follower.isBusy()) {
+                    if (!Outtake())
+                        return;
                     follower.followPath(Path5);
-                    sleep(400);
                     setPathState(5);
                 }
                 break;
             case 5:
                 if(!follower.isBusy()) {
+                    Intake();
                     follower.followPath(Path6);
-                    motor1.setPower(-0.8);
-                    motor2.setPower(0.1);
                     setPathState(6);
                 }
+                break;
             case 6:
                 if(!follower.isBusy()) {
                     follower.followPath(Path7);
-                    sleep(500);
-                    motor1.setPower(0);
-                    motor2.setPower(0);
                     setPathState(7);
                 }
-            case 7:if(!follower.isBusy()) {
-                motor3.setPower(getCompensatedPower(-0.55));
-                motor4.setPower(getCompensatedPower(0.55));
-                follower.followPath(Path8);
-                motor1.setPower(-0.75);
-                motor2.setPower(0.75);
-                sleep(1500);
-                motor3.setPower(0);
-                motor4.setPower(0);
-                motor1.setPower(0);
-                motor2.setPower(0);
-                setPathState(8);
-            }
-
-
+                break;
+            case 7:
+                if(!follower.isBusy()) {
+                    shooterEnabled = true;
+                    shooterTargetRPM = 2400;
+                    follower.followPath(Path8);
+                    setPathState(8);
+                }
             case 8:
                 if(!follower.isBusy()) {
+                    if (!Outtake())
+                        return;
                     follower.followPath(Path9);
                     setPathState(-1);
                 }
@@ -359,11 +350,6 @@ public class AutoCloseRed extends OpMode {
     /** We do not use this because everything should automatically disable **/
     @Override
     public void stop() {}
-
-    private double getCompensatedPower(double power) {
-        double currentVoltage = batteryVoltageSensor.getVoltage();
-        return Math.max(-1, Math.min(1, power * (V_REF / currentVoltage)));
-    }
     // ================= PID VARIABLES =================
     private double KP = 0.004;
     private double KI = 0.002;

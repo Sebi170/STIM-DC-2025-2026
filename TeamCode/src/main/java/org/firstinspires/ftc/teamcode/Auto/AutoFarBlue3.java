@@ -14,50 +14,59 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@Autonomous(name = "Testauto_BUN2026", group = "Examples")
-public class Auto3 extends OpMode {
+@Autonomous(name = "Auto Far Blue2")
+public class AutoFarBlue3 extends OpMode {
 
     private Follower follower;
     private VoltageSensor batteryVoltageSensor;
+
+    double masterVel;
+    double slaveVel;
 
     private Timer pathTimer, actionTimer, opmodeTimer;
 
     static final double V_REF = 12.0;
     static final double TICKS_PER_REV = 28;
 
+    boolean shooterEnabled;
+    double shooterTargetRPM;
     DcMotorEx motor1, motor2, motor3, motor4;
 
     private int pathState;
 
+    boolean canShoot;
+
+    private double RPM_TOLERANCE = 50;      // allowed error
+    private double STABLE_TIME = 0.2;       // seconds required at speed
+    private double atSpeedTimer = 0;
+
     private Path scorePreload;
-    private PathChain launchPose, ballPose, takePose, shootPose;
+    private PathChain firstLaunchPose, launchPose, ballPose, takePose, shootPose, lastPose;
     private final Pose startPose = new Pose(54.5015, 8.28, Math.toRadians(-90));
-    private final Pose scorePose = new Pose(61.6676, 13.5998, Math.toRadians(-65));
+    private final Pose scorePose = new Pose(61.6676, 13.5998, Math.toRadians(-70));
     private final Pose AballPose = new Pose(9.936567772511845, 23.7, Math.toRadians(-100));
     private final Pose takeBall = new Pose(8.76777251184834, 10.4, Math.toRadians(-100));
+    private final Pose lastPos = new Pose(60, 15, Math.toRadians(-70));
 
     public boolean Outtake()
     {
 
-        motor1.setPower(-0.9);
-        motor2.setPower(-0.6);
+        if (actionTimer.getElapsedTimeSeconds() < 2.f)
+            return false;
 
-        if (actionTimer.getElapsedTimeSeconds() < 3.f)
+        motor1.setPower(-0.9);
+        motor2.setPower(-0.4);
+
+        if (actionTimer.getElapsedTimeSeconds() < 5.f)
             return false;
 
         motor3.setPower(0);
         motor4.setPower(0);
         motor2.setPower(0);
         motor1.setPower(0);
-
+        shooterEnabled = false;
+        shooterTargetRPM = 0;
         return true;
-    }
-    public void PrepareOuttake() {
-        double voutake = motor3.getVelocity();
-        double voutake2 = motor4.getVelocity();
-        double[] powers = baseAdjustSynced(voutake, voutake2, 1000 * TICKS_PER_REV / 60.0);
-        motor3.setPower((powers[0]));
-        motor4.setPower((powers[1]));
     }
 
     public void Intake()
@@ -70,6 +79,9 @@ public class Auto3 extends OpMode {
             motor2.setPower(0);
         }
         follower.setMaxPower(1);
+
+        if (actionTimer.getElapsedTimeSeconds() > 5.f)
+            setPathState(4);
     }
 
     public void buildPaths() {
@@ -79,6 +91,11 @@ public class Auto3 extends OpMode {
 
     /* Here is an example for Constant Interpolation
     scorePreload.setConstantInterpolation(startPose.getHeading()); */
+        firstLaunchPose = follower.pathBuilder()
+                .addPath(new BezierLine(startPose, scorePose))
+                .setLinearHeadingInterpolation(startPose.getHeading(), scorePose.getHeading())
+                .build();
+
         launchPose = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, scorePose))
                 .setLinearHeadingInterpolation(startPose.getHeading(), scorePose.getHeading())
@@ -98,49 +115,55 @@ public class Auto3 extends OpMode {
                 .addPath(new BezierLine(takeBall, scorePose))
                 .setLinearHeadingInterpolation(takeBall.getHeading(), scorePose.getHeading())
                 .build();
-
+        lastPose = follower.pathBuilder()
+                .addPath(new BezierLine(startPose, lastPos))
+                .setLinearHeadingInterpolation(startPose.getHeading(), lastPos.getHeading())
+                .build();
 
     }
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
-                double voutake = motor3.getVelocity();
-                motor3.setPower(getCompensatedPower(-0.4));
-                motor4.setPower(getCompensatedPower(-0.4));
-                follower.followPath(launchPose);
-                if (!follower.isBusy()) {
-                    setPathState(1);
-                }
+                shooterEnabled = true;
+                shooterTargetRPM = 3500;
+                follower.followPath(firstLaunchPose);
+                setPathState(1);
                 break;
             case 1:
-                motor1.setPower(getCompensatedPower(0.95));
-                motor2.setPower(getCompensatedPower(0.95));
+                if(!follower.isBusy()) {
+                    if (!Outtake())
+                        return;
+
+                    /* Since this is a pathChain, we can have Pedro hold the end point while we are grabbing the sample */
+                    follower.followPath(ballPose,true);
+                    setPathState(2);
+                }
                 break;
             case 2:
-                /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the pickup1Pose's position */
                 if(!follower.isBusy()) {
-                    /* Grab Sample */
                     Intake();
-                    /* Since this is a pathChain, we can have Pedro hold the end point while we are scoring the sample */
                     follower.followPath(takePose,true);
                     setPathState(3);
                 }
                 break;
             case 3:
-                /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
                 if(!follower.isBusy()) {
-                    PrepareOuttake();
+                    shooterEnabled = true;
+                    shooterTargetRPM = 3600;
                     follower.followPath(shootPose,true);
                     setPathState(4);
                 }
                 break;
             case 4:
                 if(!follower.isBusy()) {
-                    if (actionTimer.getElapsedTimeSeconds() < 1.f)
-                        return;
                     if (!Outtake())
                         return;
-                    /* Set the state to a Case we won't use or define, so it just stops running an new paths */
+                    setPathState(5);
+                }
+                break;
+            case 5:
+                if (!follower.isBusy()) {
+                    follower.followPath(lastPose, true);
                     setPathState(-1);
                 }
                 break;
@@ -162,12 +185,29 @@ public class Auto3 extends OpMode {
         // These loop the movements of the robot, these must be called continuously in order to work
         follower.update();
         autonomousPathUpdate();
+        masterVel = motor3.getVelocity();
+        slaveVel = motor4.getVelocity();
 
+        if (shooterEnabled) {
+            double[] powers = baseAdjustSyncedRPM(masterVel, slaveVel, shooterTargetRPM);
+            motor3.setPower(powers[0]);
+            motor4.setPower(powers[1]);
+        }
+        else {
+            motor3.setPower(0);
+            motor4.setPower(0);
+            if (shooterTargetRPM == 0) {
+                canShoot = false;
+                atSpeedTimer = 0;
+            }
+        }
         // Feedback to Driver Hub for debugging
         telemetry.addData("path state", pathState);
         telemetry.addData("x", follower.getPose().getX());
         telemetry.addData("y", follower.getPose().getY());
         telemetry.addData("heading", follower.getPose().getHeading());
+        telemetry.addData("Can Shoot", canShoot);
+        telemetry.addData("Time At Speed", atSpeedTimer);
         telemetry.update();
     }
 
@@ -217,79 +257,95 @@ public class Auto3 extends OpMode {
         double currentVoltage = batteryVoltageSensor.getVoltage();
         return Math.max(-1, Math.min(1, power * (V_REF / currentVoltage)));
     }
-    private double KP             = 0.0012;
-    private double KI             = 0.00003;
-    private double KD             = 0.0010;
-    private double KF             = 0.4;     // base kick to overcome inertia
-    private double INTEGRAL_CLAMP = 0.15;
-    private double KP_SYNC        = 0.002;
+    // ================= PID VARIABLES =================
+    private double KP = 0.004;
+    private double KI = 0.002;
+    private double KD = 0.000;
+    private double KF = 0.4;
+    private double KP_SYNC = 0.001;
 
-    // Shared timestamp
-    private long   prevTimeNs      = -1;
+    private double INTEGRAL_CLAMP = 50;
 
-    // Master state
-    private double masterIntegral  = 0.0;
-    private double masterPrevError = 0.0;
-    private double masterDeriv     = 0.0;
+    private long prevTimeNs = -1;
 
-    // Slave state
-    private double slaveIntegral   = 0.0;
-    private double slavePrevError  = 0.0;
-    private double slaveDeriv      = 0.0;
+    private double masterIntegral = 0;
+    private double masterPrevError = 0;
+    private double masterDeriv = 0;
 
-    // Sync state
-    private double syncIntegral    = 0.0;
+    private double slaveIntegral = 0;
+    private double slavePrevError = 0;
+    private double slaveDeriv = 0;
 
-    private double[] baseAdjustSynced(double masterVel, double slaveVel, double targetVel) {
+    private double syncIntegral = 0;
 
-        // --- SHARED DT ---
-        long   nowNs = System.nanoTime();
-        double dt    = (prevTimeNs < 0) ? 0.02 : (nowNs - prevTimeNs) / 1e9;
-        prevTimeNs   = nowNs;
-        dt           = Math.max(1e-6, Math.min(dt, 0.5));
 
-        // --- MASTER ---
-        double masterError  = targetVel - masterVel;
-        masterIntegral     += masterError * dt;
-        masterIntegral      = Math.max(-INTEGRAL_CLAMP, Math.min(INTEGRAL_CLAMP, masterIntegral));
-        double masterRawD   = (masterError - masterPrevError) / dt;
-        masterDeriv         = 0.7 * masterDeriv + 0.3 * masterRawD;
-        masterPrevError     = masterError;
+    private double[] baseAdjustSyncedRPM(double masterTicksPerSec,
+                                         double slaveTicksPerSec,
+                                         double targetRPM) {
 
-        double masterCorrection = KP * masterError
-                + KI * masterIntegral
-                + KD * masterDeriv;
+        double targetTicksPerSec = targetRPM * TICKS_PER_REV / 60.0;
 
-        // --- SLAVE ---
-        double slaveError = targetVel - slaveVel;
-        slaveIntegral      += slaveError * dt;
-        slaveIntegral       = Math.max(-INTEGRAL_CLAMP, Math.min(INTEGRAL_CLAMP, slaveIntegral));
-        double slaveRawD    = (slaveError - slavePrevError) / dt;
-        slaveDeriv          = 0.7 * slaveDeriv + 0.3 * slaveRawD;
-        slavePrevError      = slaveError;
+        long nowNs = System.nanoTime();
+        double dt = (prevTimeNs < 0) ? 0.02 : (nowNs - prevTimeNs) / 1e9;
+        prevTimeNs = nowNs;
+        dt = Math.max(1e-6, Math.min(dt, 0.5));
 
-        double slaveCorrection = KP * slaveError
-                + KI * slaveIntegral
-                + KD * slaveDeriv;
+        // MASTER
+        double masterError = targetTicksPerSec - masterTicksPerSec;
+        masterIntegral += masterError * dt;
+        masterIntegral = clip(masterIntegral, -INTEGRAL_CLAMP, INTEGRAL_CLAMP);
 
-        // --- SYNC NUDGE ---
-        double syncError = masterVel - slaveVel;
-        syncIntegral    += syncError * dt;
-        syncIntegral     = Math.max(-0.1, Math.min(0.1, syncIntegral));
-        double syncNudge = KP_SYNC * syncError + 0.0001 * syncIntegral;
+        double masterRawD = (masterError - masterPrevError) / dt;
+        masterDeriv = 0.7 * masterDeriv + 0.3 * masterRawD;
+        masterPrevError = masterError;
 
-// MASTER
-        double ff           = KF * Math.signum(targetVel);
-        double masterPower = Math.max(-1, Math.min(1, ff + KP * masterError + KI * masterIntegral + KD * masterDeriv));
-        double slavePower  = Math.max(-1, Math.min(1, ff + slaveCorrection + syncNudge));
+        double masterCorrection =
+                KP * masterError +
+                        KI * masterIntegral +
+                        KD * masterDeriv;
 
+        // SLAVE
+        double slaveError = targetTicksPerSec - slaveTicksPerSec;
+        slaveIntegral += slaveError * dt;
+        slaveIntegral = clip(slaveIntegral, -INTEGRAL_CLAMP, INTEGRAL_CLAMP);
+
+        double slaveRawD = (slaveError - slavePrevError) / dt;
+        slaveDeriv = 0.7 * slaveDeriv + 0.3 * slaveRawD;
+        slavePrevError = slaveError;
+
+        double slaveCorrection =
+                KP * slaveError +
+                        KI * slaveIntegral +
+                        KD * slaveDeriv;
+
+        // SYNC
+        double syncError = masterTicksPerSec - slaveTicksPerSec;
+        syncIntegral += syncError * dt;
+        syncIntegral = clip(syncIntegral, -1000, 1000);
+
+        double syncNudge = KP_SYNC * syncError;
+
+        double ff = KF * Math.signum(targetTicksPerSec);
+
+        double masterPower = clip(ff + masterCorrection, -1, 1);
+        double slavePower = clip(ff + slaveCorrection + syncNudge, -1, 1);
+
+        double masterRPM = masterTicksPerSec * 60.0 / TICKS_PER_REV;
+        double rpmError = targetRPM - masterRPM;
+
+        // Check if within tolerance
+        if (Math.abs(rpmError) < RPM_TOLERANCE) {
+            atSpeedTimer += dt;
+        } else {
+            atSpeedTimer = 0;
+        }
+
+        // If stable long enough → allow shooting
+        canShoot = atSpeedTimer >= STABLE_TIME;
         return new double[]{masterPower, slavePower};
     }
 
-    private double baseAdjust(double power, double currentVel, double targetVel) {
-        // Evităm împărțirea la zero sau calculele când motorul stă
-        if (Math.abs(currentVel) < 1) return power;
-        return Math.max(-1, Math.min(1, power * (targetVel / currentVel)));
+    double clip(double val, double min, double max) {
+        return Math.max(min, Math.min(max, val));
     }
 }
-

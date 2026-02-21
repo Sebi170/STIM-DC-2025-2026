@@ -3,11 +3,10 @@ package org.firstinspires.ftc.teamcode.Auto; // make sure this aligns with class
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
@@ -15,7 +14,7 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Autonomous(name = "Auto Far Blue")
-public class AutoFarBlue extends OpMode {
+public class AutoFarBlue2 extends OpMode {
 
     private Follower follower;
     private VoltageSensor batteryVoltageSensor;
@@ -40,23 +39,23 @@ public class AutoFarBlue extends OpMode {
     private double STABLE_TIME = 0.2;       // seconds required at speed
     private double atSpeedTimer = 0;
 
-    private Path scorePreload;
-    private PathChain firstLaunchPose, launchPose, ballPose, takePose, shootPose;
-    private final Pose startPose = new Pose(54.5015, 8.28, Math.toRadians(-90));
-    private final Pose scorePose = new Pose(61.6676, 13.5998, Math.toRadians(-70));
-    private final Pose AballPose = new Pose(9.936567772511845, 23.7, Math.toRadians(-100));
-    private final Pose takeBall = new Pose(8.76777251184834, 10.4, Math.toRadians(-100));
+    public PathChain Path1;
+    public PathChain Path2;
+    public PathChain Path3;
+    public PathChain Path4;
+    public PathChain Path5;
+    private final Pose startPose = new Pose(56.000, 7.642, Math.toRadians(-90));
 
     public boolean Outtake()
     {
 
-        if (actionTimer.getElapsedTimeSeconds() < 1.f)
+        if (pathTimer.getElapsedTimeSeconds() < 22.f)
             return false;
 
         motor1.setPower(-0.9);
         motor2.setPower(-0.5);
 
-        if (actionTimer.getElapsedTimeSeconds() < 4.f)
+        if (pathTimer.getElapsedTimeSeconds() < 25.f)
             return false;
 
         motor3.setPower(0);
@@ -70,98 +69,122 @@ public class AutoFarBlue extends OpMode {
 
     public void Intake()
     {
-        follower.setMaxPower(0.2);
+        follower.setMaxPower(0.5);
         motor1.setPower(-1);
-        motor2.setPower(-0.2);
-        if (actionTimer.getElapsedTimeSeconds() < 4.f) {
-            motor1.setPower(-1);
+        motor2.setPower(-0.1);
+        if (actionTimer.getElapsedTimeSeconds() > 3.f) {
             motor2.setPower(0);
         }
-        follower.setMaxPower(1);
+    }
 
-        if (actionTimer.getElapsedTimeSeconds() > 5.f)
-            setPathState(4);
+    public void StopIntake()
+    {
+        motor1.setPower(0);
+        motor2.setPower(0);
+        follower.setMaxPower(1);
     }
 
     public void buildPaths() {
-        /* This is our scorePreload path. We are using a BezierLine, which is a straight line. */
-        scorePreload = new Path(new BezierLine(startPose, scorePose));
-        scorePreload.setLinearHeadingInterpolation(startPose.getHeading(), scorePose.getHeading());
-
-    /* Here is an example for Constant Interpolation
-    scorePreload.setConstantInterpolation(startPose.getHeading()); */
-        firstLaunchPose = follower.pathBuilder()
-                .addPath(new BezierLine(startPose, scorePose))
-                .setLinearHeadingInterpolation(startPose.getHeading(), scorePose.getHeading())
+        Path1 = follower.pathBuilder()
+                .addPath(
+                        new BezierLine(
+                                new Pose(55.642, 7.463),
+                                new Pose(62.269, 19.522)
+                        )
+                )
+                .setLinearHeadingInterpolation(Math.toRadians(-90), Math.toRadians(-70))
                 .build();
 
-        launchPose = follower.pathBuilder()
-                .addPath(new BezierLine(startPose, scorePose))
-                .setLinearHeadingInterpolation(startPose.getHeading(), scorePose.getHeading())
+        Path2 = follower.pathBuilder()
+                .addPath(
+                        new BezierLine(
+                                new Pose(62.269, 19.522),
+                                new Pose(62.358, 34.000)
+                        )
+                )
+                .setLinearHeadingInterpolation(Math.toRadians(-70), Math.toRadians(-90))
                 .build();
-
-        ballPose = follower.pathBuilder()
-                .addPath(new BezierLine(startPose, AballPose))
-                .setLinearHeadingInterpolation(startPose.getHeading(), AballPose.getHeading())
-                .build();
-
-        takePose = follower.pathBuilder()
-                .addPath(new BezierLine(AballPose, takeBall))
-                .setLinearHeadingInterpolation(AballPose.getHeading(), takeBall.getHeading())
-                .build();
-
-        shootPose = follower.pathBuilder()
-                .addPath(new BezierLine(takeBall, scorePose))
-                .setLinearHeadingInterpolation(takeBall.getHeading(), scorePose.getHeading())
-                .build();
-
-
+        // Path2 = follower.pathBuilder()
+        //        .addPath(
+        //                new BezierLine(
+        //                        new Pose(62.269, 19.522),
+        //                        new Pose(11.821, 23.881)
+        //                )
+        //        )
+        //        .setLinearHeadingInterpolation(Math.toRadians(-65), Math.toRadians(-129))
+        //        .build();
+        //Path3 = follower.pathBuilder()
+        //        .addPath(
+        //                new BezierLine(
+        //                        new Pose(11.821, 23.881),
+        //                        new Pose(8.910, 8.537)
+        //                )
+        //        )
+        //        .setLinearHeadingInterpolation(Math.toRadians(-129), Math.toRadians(-90))
+        //        .build();
+//
+        //Path4 = follower.pathBuilder()
+        //        .addPath(
+        //                new BezierCurve(
+        //                        new Pose(8.910, 8.537),
+        //                        new Pose(66.060, 5.739),
+        //                        new Pose(62.493, 19.716)
+        //                )
+        //        )
+        //        .setLinearHeadingInterpolation(Math.toRadians(-90), Math.toRadians(-63))
+        //        .build();
+//
+        //Path5 = follower.pathBuilder()
+        //        .addPath(
+        //                new BezierLine(
+        //                        new Pose(62.493, 19.716),
+        //                        new Pose(62.358, 33.343)
+        //                )
+        //        )
+        //        .setTangentHeadingInterpolation()
+        //        .build();
     }
+
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
                 shooterEnabled = true;
-                shooterTargetRPM = 3150;
-                follower.followPath(firstLaunchPose);
+                shooterTargetRPM = 3000;
+                follower.followPath(Path1);
                 setPathState(1);
                 break;
             case 1:
                 if(!follower.isBusy()) {
                     if (!Outtake())
                         return;
-
-                    /* Since this is a pathChain, we can have Pedro hold the end point while we are grabbing the sample */
-                    follower.followPath(ballPose,true);
+                    follower.followPath(Path2, true);
                     setPathState(2);
                 }
                 break;
-            case 2:
-                /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the pickup1Pose's position */
-                if(!follower.isBusy()) {
-                    /* Grab Sample */
-                    Intake();
-                    /* Since this is a pathChain, we can have Pedro hold the end point while we are scoring the sample */
-                    follower.followPath(takePose,true);
-                    setPathState(3);
-                }
-                break;
-            case 3:
-                /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
-                if(!follower.isBusy()) {
-                    shooterEnabled = true;
-                    shooterTargetRPM = 3150;
-                    follower.followPath(shootPose,true);
-                    setPathState(4);
-                }
-                break;
-            case 4:
-                if(!follower.isBusy()) {
-                    if (!Outtake())
-                        return;
-                    /* Set the state to a Case we won't use or define, so it just stops running an new paths */
-                    setPathState(-1);
-                }
-                break;
+            //case 2:
+            //    if(!follower.isBusy()) {
+            //        Intake();
+            //        follower.followPath(Path3);
+            //        setPathState(3);
+            //    }
+            //    break;
+            //case 3:
+            //    if(!follower.isBusy()) {
+            //        StopIntake();
+            //        shooterEnabled = true;
+            //        shooterTargetRPM = 3400;
+            //        follower.followPath(Path4,true);
+            //        setPathState(4);
+            //    }
+            //    break;
+            //case 4:
+            //    if(!follower.isBusy()) {
+            //        if (!Outtake())
+            //            return;
+            //        follower.followPath(Path5,true);
+            //        setPathState(-1);
+            //    }
+            //    break;
         }
     }
 
@@ -179,7 +202,10 @@ public class AutoFarBlue extends OpMode {
 
         // These loop the movements of the robot, these must be called continuously in order to work
         follower.update();
-        autonomousPathUpdate();
+        if (pathTimer.getElapsedTime() > 20000.0f) // 20 sec
+            autonomousPathUpdate();
+
+
         masterVel = motor3.getVelocity();
         slaveVel = motor4.getVelocity();
 
@@ -240,6 +266,7 @@ public class AutoFarBlue extends OpMode {
      * It runs all the setup actions, including building paths and starting the path system **/
     @Override
     public void start() {
+        pathTimer.resetTimer();
         opmodeTimer.resetTimer();
         setPathState(0);
     }

@@ -5,7 +5,6 @@ import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
-import com.pedropathing.paths.PathConstraints;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -15,8 +14,8 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@Autonomous(name = "Auto Far Red")
-public class AutoFarRed extends OpMode {
+@Autonomous(name = "Auto Far Red 2")
+public class AutoFarRed2 extends OpMode {
 
     private Follower follower;
     private VoltageSensor batteryVoltageSensor;
@@ -42,8 +41,8 @@ public class AutoFarRed extends OpMode {
     private double atSpeedTimer = 0;
 
     private Path scorePreload;
-    private PathChain Path1, Path2, Path3, Path4;
-    private final Pose startPose = new Pose(87.6195804195804, 8.201398601398598, Math.toRadians(-90));
+    private PathChain Path1, Path2, Path3, Path4, Path5;
+    private final Pose startPose = new Pose(85.2, 8.201398601398598, Math.toRadians(-90));
 
     public boolean Outtake()
     {
@@ -54,7 +53,7 @@ public class AutoFarRed extends OpMode {
         motor1.setPower(-0.75);
         motor2.setPower(-0.75);
 
-        if (actionTimer.getElapsedTimeSeconds() < 5.f)
+        if (actionTimer.getElapsedTimeSeconds() < 3.5f)
             return false;
 
         motor3.setPower(0);
@@ -93,7 +92,7 @@ public class AutoFarRed extends OpMode {
                 .addPath(
                         new BezierLine(
                                 new Pose(82.976, 19.938),
-                                new Pose(135, 22.959)
+                                new Pose(130, 22.959)
                         )
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(-120), Math.toRadians(-65))
@@ -102,8 +101,8 @@ public class AutoFarRed extends OpMode {
         Path3 = follower.pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(134.8, 22.959),
-                                new Pose(135, 12.3)
+                                new Pose(132, 22.959),
+                                new Pose(132, 12.3)
                         )
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(-65), Math.toRadians(-30))
@@ -111,17 +110,26 @@ public class AutoFarRed extends OpMode {
         Path4 = follower.pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(135, 12.3),
-                                new Pose(135.5,11.2)
+                                new Pose(132, 13),
+                                new Pose(132.4,11.5)
                         )
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(-30), Math.toRadians(-90))
+                .build();
+        Path5 = follower.pathBuilder()
+                .addPath(
+                        new BezierLine(
+                                new Pose(82.976, 19.938),
+                                new Pose(84, 20)
+                        )
+                )
+                .setLinearHeadingInterpolation(Math.toRadians(-90), Math.toRadians(-120))
                 .build();
     }
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
-                StartOutake(3000);
+                StartOutake(3100);
                 follower.followPath(Path1);
                 setPathState(1);
                 break;
@@ -139,15 +147,17 @@ public class AutoFarRed extends OpMode {
 
                     if (actionTimer.getElapsedTimeSeconds() < 5.f)
                         follower.followPath(Path3, 0.4, false);
-
-                    setPathState(3);
+                    else
+                        setPathState(3);
                 }
                 break;
             case 3:
-                if(!follower.isBusy()) {
+                if (actionTimer.getElapsedTimeSeconds() < 5.f) {
                     follower.followPath(Path4);
                     setPathState(4);
                 }
+                else
+                    setPathState(4);
                 break;
             case 4:
                 if(!follower.isBusy()) {
@@ -157,7 +167,7 @@ public class AutoFarRed extends OpMode {
                     motor2.setPower(0);
                     if (actionTimer.getElapsedTimeSeconds() < 0.5f)
                         return;
-                    StartOutake(3000);
+                    StartOutake(3100);
                     follower.followPath(Path1,true);
                     setPathState(5);
                 }

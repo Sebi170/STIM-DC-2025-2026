@@ -15,8 +15,8 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
 
-@TeleOp(name = "TeleOp_Centrare_Finala_2026Red")
-public class Iultim2026red extends LinearOpMode {
+@TeleOp(name = "TeleOp_teo")
+public class Iultim2026redteo extends LinearOpMode {
 
     // Drive și Hardware
     private SampleMecanumDrive drive;
@@ -146,7 +146,17 @@ public class Iultim2026red extends LinearOpMode {
     private void controlAuxMotors() {
         // Motoare controlate prin stick-uri gamepad 2
         motor1.setPower(Math.abs(gamepad2.left_stick_y) > 0.1 ? gamepad2.left_stick_y : 0);
-        motor2.setPower(Math.abs(gamepad2.right_stick_y) > 0.1 ? -gamepad2.right_stick_y : 0);
+        //motor2.setPower(Math.abs(gamepad2.right_stick_y) > 0.1 ? -gamepad2.right_stick_y : 0);
+        if (gamepad2.left_trigger > 0)
+        {
+            motor2.setPower(-0.8);
+        }
+        else if (gamepad2.right_trigger > 0)
+        {
+            motor2.setPower(0.8);
+        }
+        else
+            motor2.setPower(0);
 
         double voutake = motor3.getVelocity();
         double voutake1 = motor4.getVelocity();
@@ -164,7 +174,8 @@ public class Iultim2026red extends LinearOpMode {
             motor4.setPower(getCompensatedPower(baseAdjust1(VFD(x), voutake, -tiks_teoretic(VFD(x)))));
             telemetry.addData("compensedPower", getCompensatedPower(baseAdjust1(VFD(x), voutake, -tiks_teoretic(VFD(x)))));
             telemetry.addData("compensedPower", getCompensatedPower(baseAdjust(-VFD(x), voutake, -tiks_teoretic(VFD(x)))));
-        }else {
+        }
+        else {
 
             motor3.setPower(getCompensatedPower (0));
             motor4.setPower(getCompensatedPower(0));

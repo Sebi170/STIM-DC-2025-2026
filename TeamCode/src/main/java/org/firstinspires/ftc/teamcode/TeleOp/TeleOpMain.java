@@ -43,7 +43,16 @@ public class TeleOpMain extends LinearOpMode {
     static final double MAX_TURN_SPEED = 0.25; // Viteza maximă de rotație automată
     static final double V_REF = 12.0;          // Voltaj referință
     static final double a = 56;
-
+    public void Intake()
+    {
+        motor1.setPower(-1);
+        motor2.setPower(-0.01);
+    }
+    public void StopIntake()
+    {
+        motor1.setPower(0);
+        motor2.setPower(0);
+    }
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -115,11 +124,9 @@ public class TeleOpMain extends LinearOpMode {
 
             // 320cm distanta maxima
             if (gamepad2.right_bumper || gamepad2.left_bumper) {
-                shooterTargetRPM = GetDistanceRPM(x); //transforma distanta in cm din inch si scaleaza pe baza distantei maxime din far
-                shooterEnabled = true;
+                Intake();
             } else {
-                shooterTargetRPM = 0;
-                shooterEnabled = false;
+                StopIntake();
             }
 
             // Actualizări obligatorii
