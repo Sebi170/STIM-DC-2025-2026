@@ -74,13 +74,19 @@ public class AutoCloseBlue extends OpMode {
     {
         follower.setMaxPower(0.5);
         motor1.setPower(-1);
-        motor2.setPower(-0.01);
     }
-    public void StopIntake()
+    public boolean StopIntake()
     {
         follower.setMaxPower(1);
-        motor1.setPower(0);
-        motor2.setPower(0);
+        motor2.setPower(0.1);
+        motor2.setPower(1);
+        if (actionTimer.getElapsedTime() > 1000)
+        {
+            motor2.setPower(0);
+            motor2.setPower(0);
+            return true;
+        }
+        return false;
     }
 
 
@@ -109,7 +115,7 @@ public class AutoCloseBlue extends OpMode {
                 .addPath(
                         new BezierLine(
                                 new Pose(47.000, 84.045),
-                                new Pose(15.700, 84.045)
+                                new Pose(14.984, 83.866)
                         )
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
@@ -118,7 +124,7 @@ public class AutoCloseBlue extends OpMode {
         Path4 = follower.pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(15.700, 84.045),
+                                new Pose(14.984, 83.866),
                                 new Pose(48.119, 91.000)
                         )
                 )
@@ -129,7 +135,7 @@ public class AutoCloseBlue extends OpMode {
                 .addPath(
                         new BezierLine(
                                 new Pose(48.119, 91.000),
-                                new Pose(15.269, 72.075)
+                                new Pose(51.806, 72.254)
                         )
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(-40), Math.toRadians(-90))
@@ -137,9 +143,8 @@ public class AutoCloseBlue extends OpMode {
 
         Path6 = follower.pathBuilder()
                 .addPath(
-                        new BezierCurve(
-                                new Pose(15.269, 72.075),
-                                new Pose(55.649, 88.567),
+                        new BezierLine(
+                                new Pose(51.806, 72.254),
                                 new Pose(44.955, 60.000)
                         )
                 )
@@ -150,7 +155,7 @@ public class AutoCloseBlue extends OpMode {
                 .addPath(
                         new BezierLine(
                                 new Pose(44.955, 60.000),
-                                new Pose(9.500, 60.000)
+                                new Pose(6.276, 59.104)
                         )
                 )
                 .setConstantHeadingInterpolation(Math.toRadians(180))
@@ -159,7 +164,7 @@ public class AutoCloseBlue extends OpMode {
         Path8 = follower.pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(9.500, 60.000),
+                                new Pose(6.276, 59.104),
                                 new Pose(77.269, 65.694),
                                 new Pose(58.104, 91.045)
                         )
@@ -202,7 +207,8 @@ public class AutoCloseBlue extends OpMode {
                 break;
             case 3:
                 if(!follower.isBusy()) {
-                    StopIntake();
+                    if (!StopIntake())
+                        return;
                     shooterEnabled = true;
                     shooterTargetRPM = 2400;
                     follower.followPath(Path4);
@@ -232,7 +238,8 @@ public class AutoCloseBlue extends OpMode {
                 break;
             case 7:
                 if(!follower.isBusy()) {
-                    StopIntake();
+                    if (!StopIntake())
+                        return;
                     shooterEnabled = true;
                     shooterTargetRPM = 2400;
                     follower.followPath(Path8);

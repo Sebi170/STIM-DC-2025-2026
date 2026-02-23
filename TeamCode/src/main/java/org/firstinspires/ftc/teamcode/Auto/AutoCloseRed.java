@@ -104,7 +104,7 @@ public class AutoCloseRed extends OpMode {
                                 new Pose(82.000, 90.896)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(217), Math.toRadians(225))
+                .setLinearHeadingInterpolation(Math.toRadians(217), Math.toRadians(217))
                 .build();
 
         Path2 = follower.pathBuilder()
@@ -114,7 +114,7 @@ public class AutoCloseRed extends OpMode {
                                 new Pose(97.000, 84.045)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(220), Math.toRadians(0))
+                .setLinearHeadingInterpolation(Math.toRadians(217), Math.toRadians(0))
                 .build();
 
         Path3 = follower.pathBuilder()
@@ -134,7 +134,7 @@ public class AutoCloseRed extends OpMode {
                                 new Pose(95.881, 91.000)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(220))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(217))
                 .build();
 
         Path5 = follower.pathBuilder()
@@ -144,7 +144,7 @@ public class AutoCloseRed extends OpMode {
                                 new Pose(128.731, 72.075)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(220), Math.toRadians(270))
+                .setLinearHeadingInterpolation(Math.toRadians(217), Math.toRadians(270))
                 .build();
 
         Path6 = follower.pathBuilder()
@@ -176,7 +176,7 @@ public class AutoCloseRed extends OpMode {
                                 new Pose(85.896, 91.045)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(220))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(213))
                 .build();
 
         Path9 = follower.pathBuilder()
@@ -186,7 +186,7 @@ public class AutoCloseRed extends OpMode {
                                 new Pose(125.746, 80.776)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(220), Math.toRadians(180))
+                .setLinearHeadingInterpolation(Math.toRadians(213), Math.toRadians(180))
                 .build();
     }
     public void autonomousPathUpdate() {
